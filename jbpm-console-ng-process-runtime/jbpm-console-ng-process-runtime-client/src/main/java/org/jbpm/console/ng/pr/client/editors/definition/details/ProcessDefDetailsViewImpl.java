@@ -16,15 +16,13 @@
 
 package org.jbpm.console.ng.pr.client.editors.definition.details;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
 import com.github.gwtbootstrap.client.ui.Label;
-import com.github.gwtbootstrap.client.ui.ListBox;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.DoubleClickEvent;
-import com.google.gwt.event.dom.client.DoubleClickHandler;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import org.jboss.errai.ui.shared.api.annotations.DataField;
@@ -32,8 +30,6 @@ import org.jboss.errai.ui.shared.api.annotations.Templated;
 import org.jbpm.console.ng.pr.client.i18n.Constants;
 import org.uberfire.backend.vfs.Path;
 import org.uberfire.client.mvp.PlaceManager;
-import org.uberfire.mvp.PlaceRequest;
-import org.uberfire.mvp.impl.DefaultPlaceRequest;
 import org.uberfire.workbench.events.NotificationEvent;
 
 @Dependent
@@ -45,12 +41,10 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
     @Inject
     private PlaceManager placeManager;
 
-    private ProcessDefDetailsPresenter presenter;
-
     @Inject
     @DataField
     public HTML processIdText;
-    
+
     @Inject
     @DataField
     public HTML processNameText;
@@ -70,7 +64,7 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
     @Inject
     @DataField
     public HTML processDataListBox;
-    
+
     @Inject
     @DataField
     public HTML processServicesListBox;
@@ -83,11 +77,10 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
     @DataField
     public HTML deploymentIdText;
 
-
     @Inject
     @DataField
     public Label processNameLabel;
-    
+
     @Inject
     @DataField
     public Label processIdLabel;
@@ -115,7 +108,7 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
     @Inject
     @DataField
     public Label processDataListLabel;
-    
+
     @Inject
     @DataField
     public Label processServicesListLabel;
@@ -127,22 +120,8 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
 
     private String encodedProcessSource;
 
-    @Override
-    public void init( final ProcessDefDetailsPresenter presenter ) {
-        this.presenter = presenter;
-        
-
-        this.subprocessListBox.addDoubleClickHandler( new DoubleClickHandler() {
-            @Override
-            public void onDoubleClick( DoubleClickEvent event ) {
-                ListBox source = (ListBox) event.getSource();
-                String processId = source.getValue( source.getSelectedIndex() );
-                PlaceRequest placeRequestImpl = new DefaultPlaceRequest( "Process Definition Details" );
-                placeRequestImpl.addParameter( "processId", processId );
-                placeManager.goTo( placeRequestImpl );
-            }
-        } );
-
+    @PostConstruct
+    public void init() {
         processIdLabel.setText( constants.Process_Definition_Id() );
         processNameLabel.setText( constants.Process_Definition_Name() );
         nroOfHumanTasksLabel.setText( constants.Human_Tasks_Count() );
@@ -152,9 +131,7 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
         subprocessListLabel.setText( constants.SubProcesses() );
         processDataListLabel.setText( constants.Process_Variables() );
         processServicesListLabel.setText( constants.Services() );
-
     }
-
 
     @Override
     public HTML getProcessNameText() {
@@ -180,12 +157,12 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
     public HTML getProcessDataListBox() {
         return processDataListBox;
     }
-    
+
     @Override
     public HTML getProcessServicesListBox() {
         return processServicesListBox;
     }
-    
+
     @Override
     public HTML getSubprocessListBox() {
         return subprocessListBox;
@@ -223,6 +200,5 @@ public class ProcessDefDetailsViewImpl extends Composite implements ProcessDefDe
     public String getEncodedProcessSource() {
         return encodedProcessSource;
     }
-    
 
 }

@@ -16,73 +16,84 @@
 
 package org.jbpm.console.ng.ht.forms.client.editors.taskform.displayers;
 
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.user.client.ui.IsWidget;
-import java.util.Set;
+import org.jboss.errai.common.client.api.Caller;
+import org.jbpm.console.ng.bd.service.KieSessionEntryPoint;
+import org.jbpm.console.ng.ht.forms.client.editors.taskform.displayers.util.PlaceManagerFormActivitySearcher;
+import org.jbpm.console.ng.ht.model.events.RenderFormEvent;
+
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import org.jbpm.console.ng.ht.model.events.RenderFormEvent;
-import org.uberfire.client.mvp.AbstractWorkbenchScreenActivity;
-import org.uberfire.client.mvp.Activity;
-import org.uberfire.client.mvp.ActivityManager;
-import org.uberfire.mvp.impl.DefaultPlaceRequest;
+import java.util.Map;
 
 /**
  *
  * @author salaboy
  */
 @Dependent
-public class PlaceManagerStartProcessDisplayerImpl extends FTLStartProcessDisplayerImpl{
-  @Inject
-  private ActivityManager activityManager;
-  
-  private AbstractWorkbenchScreenActivity currentActivity;
+public class PlaceManagerStartProcessDisplayerImpl extends AbstractStartProcessFormDisplayer {
 
-  public PlaceManagerStartProcessDisplayerImpl() {
-    
-  }
-  
-  @Override
-  protected void initDisplayer() {
-    publish(this);
-    publishGetFormValues();
-  }
+    @Inject
+    private Caller<KieSessionEntryPoint> sessionServices;
 
+    @Inject
+    private PlaceManagerFormActivitySearcher placeManagerFormActivitySearcher;
 
-  @Override
-  public boolean supportsContent(String content) {
-    return content.contains("handledByPlaceManagerFormProvider");
-  }
+    public PlaceManagerStartProcessDisplayerImpl() {
 
-  @Override
-  public int getPriority() {
-    return 2;
-  }
-
-  public void onFormRender(@Observes RenderFormEvent event) {
-    String processId = event.getParams().get("processId");
-    if (processId == null || processId.equals("")) {
-      return;
     }
-    DefaultPlaceRequest defaultPlaceRequest = new DefaultPlaceRequest(processId+" Form", event.getParams());
-    Set<Activity> activities = activityManager.getActivities(defaultPlaceRequest);
-    if (activities.isEmpty()) {
-      return;
+    @Override
+    protected native void startProcessFromDisplayer() /*-{
+        $wnd.startProcess($wnd.getFormValues($doc.getElementById("form-data")));
+    }-*/;
+
+    @Override
+    protected void initDisplayer() {
+        publish(this);
+        jsniHelper.publishGetFormValues();
     }
-    currentActivity = ((AbstractWorkbenchScreenActivity) activities.iterator().next());
-    IsWidget widget = currentActivity.getWidget();
-    currentActivity.launch(defaultPlaceRequest, null);
-    currentActivity.onStartup(defaultPlaceRequest);
-    formContainer.clear();
-    formContainer.add(widget);
-    currentActivity.onOpen();
-  }
-  
-  @Override
-  public void close() {
-    super.close(); 
-    if(currentActivity != null){
-      currentActivity.onClose();
+
+    @Override
+    public boolean supportsContent(String content) {
+        return content.contains("handledByPlaceManagerFormProvider");
     }
-  }
+
+    @Override
+    public int getPriority() {
+        return 2;
+    }
+
+    public void onFormRender(@Observes RenderFormEvent event) {
+        String processId = event.getParams().get("processId");
+        if (processId == null || processId.equals("")) {
+            return;
+        }
+
+        IsWidget widget = placeManagerFormActivitySearcher.findFormActivityWidget(processId, event.getParams());
+
+        formContainer.clear();
+        if (widget != null) {
+            formContainer.add(widget);
+        }
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        placeManagerFormActivitySearcher.closeFormActivity();
+    }
+
+    public void startProcess(JavaScriptObject values) {
+        final Map<String, Object> params = jsniHelper.getParameters(values);
+        sessionServices.call(getStartProcessRemoteCallback(), getUnexpectedErrorCallback())
+                .startProcess(deploymentId, processDefId, params);
+    }
+
+    protected native void publish(PlaceManagerStartProcessDisplayerImpl ftl)/*-{
+        $wnd.startProcess = function (from) {
+            ftl.@org.jbpm.console.ng.ht.forms.client.editors.taskform.displayers.PlaceManagerStartProcessDisplayerImpl::startProcess(Lcom/google/gwt/core/client/JavaScriptObject;)(from);
+        }
+    }-*/;
 }
